@@ -1,0 +1,9 @@
+1.00:  2005-05-20
+ 	- fix holes pointed out by Martin Atkins (led to me doing all the
+	  Net::DNS and manual resolving work)
+
+	- bundle the test script by adding a local webserver mode to it,
+	  rather than using an xinetd script
+
+0.99:  2005-05-19
+     - initial release
