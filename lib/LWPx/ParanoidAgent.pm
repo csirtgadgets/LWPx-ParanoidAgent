@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -103,21 +103,77 @@ sub _bad_host {
     my $host = lc(shift);
 
     return 0 if $self->_host_list_match("whitelisted_hosts", $host);
+    return 1 if $self->_host_list_match("blocked_hosts", $host);
+    return 1 if
+        $host =~ /^localhost$/i ||    # localhost is bad.  even though it'd be stopped in
+                                      #    a later call to _bad_host with the IP address
+        $host =~ /\s/i;               # any whitespace is questionable
 
-    # don't let people connect to private, internal, or multicast IP addresses
-    if ($host =~ /^(?:10\.|127\.|192\.168\.)/ ||
-        ($host =~ /^172\.(\d+)/ && ($1 >= 16 && $1 <= 31)) ||
-        ($host =~ /^2(\d+)/ && ($1 >= 24 && $1 <= 54)) ||
-        $host =~ /^localhost$/i ||
-        $host =~ /\b0\d+\./ || # octal IPs: 0177.0.0.1 == 127.0.0.1
-        $host =~ /\s/ ||       # whitespace
-        $host =~ /^\d+$/       # purely decimal/octal IP addresses http://167838209/ == 10.1.2.1
-        ) {
-        return 1;
+    # Let's assume it's an IP address now, and get it into 32 bits.
+    # Uf at any time something doesn't look like a number, then it's
+    # probably a hostname and we've already either whitelisted or
+    # blacklisted those, so we'll just say it's okay and it'll come
+    # back here later when the resolver finds an IP address.
+    my @parts = split(/\./, $host);
+    return 0 if @parts > 4;
+
+    # un-octal/un-hex the parts, or return if there's a non-numeric part
+    my $overflow_flag = 0;
+    foreach (@parts) {
+        return 0 unless /^\d+$/ || /^0x[a-f\d]+$/;
+        local $SIG{__WARN__} = sub { $overflow_flag = 1; };
+        $_ = oct($_) if /^0/;
     }
 
-    return 1 if $self->_host_list_match("blocked_hosts", $host);
+    # a purely numeric address shouldn't overflow.
+    return 1 if $overflow_flag;
 
+    my $addr;  # network order packed IP address
+
+    if (@parts == 1) {
+        # a - 32 bits
+        return 1 if
+            $parts[0] > 0xffffffff;
+        $addr = pack("N", $parts[0]);
+    } elsif (@parts == 2) {
+        # a.b - 8.24 bits
+        return 1 if
+            $parts[0] > 0xff ||
+            $parts[1] > 0xffffff;
+        $addr = pack("N", $parts[0] << 24 | $parts[1]);
+    } elsif (@parts == 3) {
+        # a.b.c - 8.8.16 bits
+        return 1 if
+            $parts[0] > 0xff ||
+            $parts[1] > 0xff ||
+            $parts[2] > 0xffff;
+        $addr = pack("N", $parts[0] << 24 | $parts[1] << 16 | $parts[2]);
+    } else {
+        # a.b.c.d - 8.8.8.8 bits
+        return 1 if
+            $parts[0] > 0xff ||
+            $parts[1] > 0xff ||
+            $parts[2] > 0xff ||
+            $parts[3] > 0xff;
+        $addr = pack("N", $parts[0] << 24 | $parts[1] << 16 | $parts[2] << 8 | $parts[3]);
+    }
+
+    my $haddr = unpack("N", $addr); # host order IP address
+    return 1 if
+        ($haddr & 0xFF000000) == 0x0A000000 || # 10.0.0.0/8
+        ($haddr & 0xFF000000) == 0x7F000000 || # 127.0.0.0/8
+        ($haddr & 0xFFF00000) == 0xAC100000 || # 172.16.0.0/12
+        ($haddr & 0xFFFF0000) == 0xC0A80000 || # 192.168.0.0/16
+        ($haddr & 0xFFFF0000) == 0xA9FE0000 || # 169.254.0.0/16
+         $haddr               == 0xFFFFFFFF || # 255.255.255.255
+        ($haddr & 0xF0000000) == 0xE0000000;  # multicast addresses
+
+    # as final IP address check, pass in the canonical a.b.c.d decimal form
+    # to the blacklisted host check to see if matches as bad there.
+    my $can_ip = join(".", map { ord } split //, $addr);
+    return 1 if $self->_host_list_match("blocked_hosts", $can_ip);
+
+    # looks like an okay IP address
     return 0;
 }
 
@@ -425,6 +481,54 @@ whitelist them), hostnames/IPs that you blacklist, remote webserver
 tarpitting your process (the timeout parameter is changed to be a global
 timeout over the entire process), and all combinations of redirects and
 DNS tricks to otherwise tarpit and/or connect to internal resources.
+
+=head1 CONSTRUCTOR
+
+=over 4
+
+=item C<new>
+
+my $ua = LWPx::ParanoidAgent->new([ %opts ]);
+
+In addition to any constructor options from L<LWP::UserAgent>, you may
+also set C<blocked_hosts> (to an arrayref), C<whitelisted_hosts> (also
+an arrayref), and C<resolver>, a Net::DNS::Resolver object.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item $csr->B<resolver>($net_dns_resolver)
+
+=item $csr->B<resolver>
+
+Get/set the L<Net::DNS::Resolver> object used to lookup hostnames.
+
+=item $csr->B<blocked_hosts>(@host_list)
+
+=item $csr->B<blocked_hosts>
+
+Get/set the the list of blocked hosts.  The items in @host_list may be
+compiled regular expressions (with qr//), code blocks, or scalar
+literals.  In any case, the thing that is match, passed in, or
+compared (respectively), is all of the given hostname, given IP
+address, and IP address in canonical a.b.c.d decimal notation.  So if
+you want to block "1.2.3.4" and the user entered it in a mix of
+network/host form in a mix of decimal/octal/hex, you need only block
+"1.2.3.4" and not worry about the details.
+
+=item $csr->B<whitelisted_hosts>(@host_list)
+
+=item $csr->B<whitelisted_hosts>
+
+Like blocked hosts, but matching the hosts/IPs that bypass blocking
+checks.  The only difference is the IP address isn't canonicalized
+before being whitelisted-matched, mostly because it doesn't make sense
+for somebody to enter in a good address in a subversive way.
+
+=back
 
 =head1 SEE ALSO
 

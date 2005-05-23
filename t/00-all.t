@@ -4,7 +4,7 @@
 use strict;
 use LWPx::ParanoidAgent;
 use Time::HiRes qw(time);
-use Test::More tests => 19;
+use Test::More tests => 24;
 use Net::DNS;
 use IO::Socket::INET;
 
@@ -29,14 +29,28 @@ $ua->whitelisted_hosts(
 
 $ua->blocked_hosts(
                    qr/\.lj$/,
+                   "1.2.3.6",
                    );
 
 my $res;
 
 # hostnames pointing to internal IPs
 $res = $ua->get("http://localhost-fortest.danga.com/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
+ok(! $res->is_success && $res->status_line =~ /Suspicious DNS results/);
+
+# random IP address forms
+$res = $ua->get("http://0x7f.1/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
+$res = $ua->get("http://0x7f.0xffffff/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
+$res = $ua->get("http://037777777777/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
+$res = $ua->get("http://192.052000001/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
+
+# test the the blocked host above in decimal form is blocked by this non-decimal form:
+$res = $ua->get("http://0x01.02.0x306/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
 
 # hostnames doing CNAMEs (this one resolves to "brad.lj", which is verboten)
 my $old_resolver = $ua->resolver;
