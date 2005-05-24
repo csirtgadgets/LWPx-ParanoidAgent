@@ -4,7 +4,7 @@
 use strict;
 use LWPx::ParanoidAgent;
 use Time::HiRes qw(time);
-use Test::More tests => 24;
+use Test::More tests => 25;
 use Net::DNS;
 use IO::Socket::INET;
 
@@ -46,6 +46,8 @@ ok(! $res->is_success && $res->status_line =~ /blocked/);
 $res = $ua->get("http://037777777777/");
 ok(! $res->is_success && $res->status_line =~ /blocked/);
 $res = $ua->get("http://192.052000001/");
+ok(! $res->is_success && $res->status_line =~ /blocked/);
+$res = $ua->get("http://0x00.00/");
 ok(! $res->is_success && $res->status_line =~ /blocked/);
 
 # test the the blocked host above in decimal form is blocked by this non-decimal form:

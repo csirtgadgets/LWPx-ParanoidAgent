@@ -1,3 +1,6 @@
+1.02:  2005-05-24
+	- block 0.0.0.0/8 as well (Andy Thomas <andy.thomas2@gmail.com>)
+
 1.01:  2005-05-23
 	- more POD docs (constructor and method calls)
 

@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -160,11 +160,12 @@ sub _bad_host {
 
     my $haddr = unpack("N", $addr); # host order IP address
     return 1 if
+        ($haddr & 0xFF000000) == 0x00000000 || # 0.0.0.0/8
         ($haddr & 0xFF000000) == 0x0A000000 || # 10.0.0.0/8
         ($haddr & 0xFF000000) == 0x7F000000 || # 127.0.0.0/8
         ($haddr & 0xFFF00000) == 0xAC100000 || # 172.16.0.0/12
-        ($haddr & 0xFFFF0000) == 0xC0A80000 || # 192.168.0.0/16
         ($haddr & 0xFFFF0000) == 0xA9FE0000 || # 169.254.0.0/16
+        ($haddr & 0xFFFF0000) == 0xC0A80000 || # 192.168.0.0/16
          $haddr               == 0xFFFFFFFF || # 255.255.255.255
         ($haddr & 0xF0000000) == 0xE0000000;  # multicast addresses
 
