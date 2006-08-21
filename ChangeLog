@@ -1,3 +1,8 @@
+1.03:  2006-08-21
+	- run under taint mode (Curtis Jewell <perl@csjewell.fastmail.us>)
+
+        - block 192.0.2.0/24 and 192.88.99.0/24 (Robby Griffin <rmg@terc.edu>)
+
 1.02:  2005-05-24
 	- block 0.0.0.0/8 as well (Andy Thomas <andy.thomas2@gmail.com>)
 

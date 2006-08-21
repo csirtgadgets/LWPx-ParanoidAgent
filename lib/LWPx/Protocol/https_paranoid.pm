@@ -1,7 +1,7 @@
 #
 package LWPx::Protocol::https_paranoid;
 
-# $Id: https.pm,v 1.12 2003/10/15 10:35:47 gisle Exp $
+# $Id: https_paranoid.pm 2 2005-06-01 23:12:25Z bradfitz $
 
 use strict;
 

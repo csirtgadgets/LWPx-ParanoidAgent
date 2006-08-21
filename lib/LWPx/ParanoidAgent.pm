@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -19,6 +19,7 @@ sub new {
     my $blocked_hosts     = delete $opts{blocked_hosts}     || [];
     my $whitelisted_hosts = delete $opts{whitelisted_hosts} || [];
     my $resolver          = delete $opts{resolver};
+    my $paranoid_proxy    = delete $opts{paranoid_proxy};
     $opts{timeout}      ||= 15;
 
     my $self = LWP::UserAgent->new( %opts );
@@ -26,6 +27,7 @@ sub new {
     $self->{'blocked_hosts'}     = $blocked_hosts;
     $self->{'whitelisted_hosts'} = $whitelisted_hosts;
     $self->{'resolver'}          = $resolver;
+    $self->{'paranoid_proxy'}    = $paranoid_proxy;
 
     $self = bless $self, $class;
     return $self;
@@ -69,7 +71,8 @@ sub _resolve {
     foreach my $rr ($packet->answer) {
         if ($rr->type eq "A") {
             die "Suspicious DNS results from A record\n" if $self->_bad_host($rr->address);
-            push @addr, $rr->address;
+            # untaints the address:
+            push @addr, join(".", ($rr->address =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/));
         } elsif ($rr->type eq "CNAME") {
             # will be checked for validity in the recursion path
             $cname = $rr->cname;
@@ -166,6 +169,8 @@ sub _bad_host {
         ($haddr & 0xFFF00000) == 0xAC100000 || # 172.16.0.0/12
         ($haddr & 0xFFFF0000) == 0xA9FE0000 || # 169.254.0.0/16
         ($haddr & 0xFFFF0000) == 0xC0A80000 || # 192.168.0.0/16
+        ($haddr & 0xFFFFFF00) == 0xC0000200 || # 192.0.2.0/24  "TEST-NET" docs/example code
+        ($haddr & 0xFFFFFF00) == 0xC0586300 || # 192.88.99.0/24 6to4 relay anycast addresses
          $haddr               == 0xFFFFFFFF || # 255.255.255.255
         ($haddr & 0xF0000000) == 0xE0000000;  # multicast addresses
 
@@ -196,6 +201,12 @@ sub request {
         $err_res->header("Content-Type" => "text/plain");
         $err_res->content("403 Unauthorized access to blocked host\n");
         return $err_res;
+    }
+
+    if (my $pp = $self->{paranoid_proxy}) {
+        $req->uri("$pp?url="   . eurl($req->uri) .
+                  "&timeout="  . ($self->{timeout}  + 0) .
+                  "&max_size=" . ($self->{max_size} + 0));
     }
 
     return $self->SUPER::request($req, $arg, $size, $previous);
@@ -409,6 +420,13 @@ sub _new_response {
     $response->header("Content-Type" => "text/plain");
     $response->content("$code $message\n");
     return $response;
+}
+
+sub eurl {
+    my $a = $_[0];
+    $a =~ s/([^a-zA-Z0-9_\,\-.\/\\\: ])/uc sprintf("%%%02x",ord($1))/eg;
+    $a =~ tr/ /+/;
+    return $a;
 }
 
 1;

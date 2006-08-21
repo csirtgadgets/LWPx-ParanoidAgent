@@ -1,4 +1,4 @@
-# $Id: http.pm,v 1.68 2004/06/14 16:26:46 gisle Exp $
+# $Id: http_paranoid.pm 2 2005-06-01 23:12:25Z bradfitz $
 #
 
 package LWPx::Protocol::http_paranoid;
