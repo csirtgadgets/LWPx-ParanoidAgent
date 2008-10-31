@@ -1,3 +1,9 @@
+1.04:  2008-10-30
+	- fix tests to no longer rely on my DNS servers, which had since migrated
+	  to EasyDNS which doesn't allow the types of malicious records I was
+	  testing for.  instead, switch to a mock object resolver.
+	  (Brad Fitzpatrick, brad@danga.com)
+
 1.03:  2006-08-21
 	- run under taint mode (Curtis Jewell <perl@csjewell.fastmail.us>)
 

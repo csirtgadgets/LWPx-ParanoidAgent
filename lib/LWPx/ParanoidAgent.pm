@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -49,7 +49,7 @@ sub _resolve {
     $depth ||= 0;
 
     die "CNAME recursion depth limit exceeded.\n" if $depth > 10;
-    die "Suspicious results from DNS lookup" if $self->_bad_host($host);
+    die "DNS lookup resulted in bad host." if $self->_bad_host($host);
 
     # return the IP address if it looks like one and wasn't marked bad
     return ($host) if $host =~ /^\d+\.\d+\.\d+\.\d+$/;
@@ -57,10 +57,14 @@ sub _resolve {
     my $sock = $res->bgsend($host)
         or die "No sock from bgsend";
 
-    my $rin = '';
-    vec($rin, fileno($sock), 1) = 1;
-    my $nf = select($rin, undef, undef, $self->_time_remain($request));
-    die "DNS lookup timeout" unless $nf;
+    # wait for the socket to become readable, unless this is from our test
+    # mock resolver.
+    unless ($sock && $sock eq "MOCK") {
+        my $rin = '';
+        vec($rin, fileno($sock), 1) = 1;
+        my $nf = select($rin, undef, undef, $self->_time_remain($request));
+        die "DNS lookup timeout" unless $nf;
+    }
 
     my $packet = $res->bgread($sock)
         or die "DNS bgread failure";
@@ -89,7 +93,7 @@ sub _host_list_match {
     my $list_name = shift;
     my $host = shift;
 
-    foreach my $rule (@{ $self->{$list_name} }) {
+    foreach my $rule (@{ $self->{$list_name} || [] }) {
         if (ref $rule eq "CODE") {
             return 1 if $rule->($host);
         } elsif (ref $rule) {
@@ -335,7 +339,7 @@ sub blocked_hosts
         $self->{'blocked_hosts'} = \@hosts;
         return;
     }
-    return @{ $self->{'blocked_hosts'} };
+    return @{ $self->{'blocked_hosts'} || [] };
 }
 
 # whitelisted hostnames, compiled patterns, or subrefs
@@ -347,7 +351,7 @@ sub whitelisted_hosts
         $self->{'whitelisted_hosts'} = \@hosts;
         return;
     }
-    return @{ $self->{'whitelisted_hosts'} };
+    return @{ $self->{'whitelisted_hosts'} || [] };
 }
 
 # get/set Net::DNS resolver object
@@ -372,7 +376,7 @@ sub _need_proxy
 
     my $scheme = $url->scheme || return;
     if (my $proxy = $self->{'proxy'}{$scheme}) {
-        if (@{ $self->{'no_proxy'} }) {
+        if ($self->{'no_proxy'} && @{ $self->{'no_proxy'} }) {
             if (my $host = eval { $url->host }) {
                 for my $domain (@{ $self->{'no_proxy'} }) {
                     if ($host =~ /\Q$domain\E$/) {

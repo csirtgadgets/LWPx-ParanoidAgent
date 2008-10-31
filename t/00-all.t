@@ -4,7 +4,7 @@
 use strict;
 use LWPx::ParanoidAgent;
 use Time::HiRes qw(time);
-use Test::More tests => 27;
+use Test::More tests => 29;
 use Net::DNS;
 use IO::Socket::INET;
 
@@ -14,10 +14,36 @@ my $delta = sub { printf " %.03f secs\n", $td; };
 my $ua = LWPx::ParanoidAgent->new;
 ok((ref $ua) =~ /LWPx::ParanoidAgent/);
 
+my $mock_resolver = MockResolver->new;
+
+# Record pointing to localhost:
+{
+    my $packet = Net::DNS::Packet->new;
+    $packet->push(answer => Net::DNS::RR->new("localhost-fortest.danga.com. 86400 A 127.0.0.1"));
+    $mock_resolver->set_fake_record("localhost-fortest.danga.com", $packet);
+}
+
+# CNAME to blocked destination:
+{
+    my $packet = Net::DNS::Packet->new;
+    $packet->push(answer => Net::DNS::RR->new("bradlj-fortest.danga.com 300 IN CNAME brad.lj"));
+    $mock_resolver->set_fake_record("bradlj-fortest.danga.com", $packet);
+}
+
+$ua->resolver($mock_resolver);
+
 my ($HELPER_IP, $HELPER_PORT) = ("127.66.74.70", 9001);
 
 my $child_pid = fork;
-web_server_mode() if ! $child_pid;
+unless ($child_pid) {
+    web_server_mode();
+}
+END {
+    if ($child_pid) {
+        print STDERR "Killing child pid: $child_pid\n";
+        kill 9, $child_pid;
+    }
+}
 select undef, undef, undef, 0.5;
 
 my $HELPER_SERVER = "http://$HELPER_IP:$HELPER_PORT";
@@ -36,7 +62,9 @@ my $res;
 
 # hostnames pointing to internal IPs
 $res = $ua->get("http://localhost-fortest.danga.com/");
-ok(! $res->is_success && $res->status_line =~ /Suspicious DNS results/);
+ok(! $res->is_success);
+like($res->status_line, qr/Suspicious DNS results/);
+$ua->resolver(Net::DNS::Resolver->new);
 
 # random IP address forms
 $res = $ua->get("http://0x7f.1/");
@@ -62,10 +90,10 @@ ok(! $res->is_success && $res->status_line =~ /blocked/);
 
 # hostnames doing CNAMEs (this one resolves to "brad.lj", which is verboten)
 my $old_resolver = $ua->resolver;
-$ua->resolver(Net::DNS::Resolver->new(nameservers => [  qw(66.151.149.18) ] ));
+$ua->resolver($mock_resolver);
 $res = $ua->get("http://bradlj-fortest.danga.com/");
-print $res->status_line, "\n";
 ok(! $res->is_success);
+like($res->status_line, qr/DNS lookup resulted in bad host/);
 $ua->resolver($old_resolver);
 
 # black-listed via blocked_hosts
@@ -166,7 +194,7 @@ sub web_server_mode {
                                       LocalPort => $HELPER_PORT,
                                       ReuseAddr => 1,
                                       Proto     => 'tcp')
-        or die "Couldn't start webserver.\n";
+        or die "Couldn't start webserver: $!\n";
 
     while (my $csock = $ssock->accept) {
         exit 0 unless $csock;
@@ -219,3 +247,52 @@ sub web_server_mode {
     }
     exit 0;
 }
+
+package MockResolver;
+use strict;
+use base 'Net::DNS::Resolver';
+
+sub new {
+    my $class = shift;
+    return bless {
+        proxy => Net::DNS::Resolver->new,
+        fake_record => {},
+    }, $class;
+}
+
+sub set_fake_record {
+    my ($self, $host, $packet) = @_;
+    $self->{fake_record}{$host} = $packet;
+}
+
+sub _make_proxy {
+    my $method = shift;
+    return sub {
+        my $self = shift;
+        my $fr = $self->{fake_record};
+        if ($method eq "bgsend" && $fr->{$_[0]}) {
+            $self->{next_fake_packet} = $fr->{$_[0]};
+            Test::More::diag("mock DNS resolver doing fake bgsend() of $_[0]\n")
+                if $ENV{VERBOSE};
+            return "MOCK";  # magic value that'll not be treated as a socket
+        }
+        if ($method eq "bgread" && $_[0] eq "MOCK") {
+            Test::More::diag("mock DNS resolver returning mock packet for bgread.")
+                if $ENV{VERBOSE};
+            return $self->{next_fake_packet};
+        }
+        # No verbose conditional on this one because it shouldn't happen:
+        Test::More::diag("Calling through to Net::DNS::Resolver proxy method '$method'");
+        return $self->{proxy}->$method(@_);
+    };
+}
+
+BEGIN {
+    *search = _make_proxy("search");
+    *query = _make_proxy("query");
+    *send = _make_proxy("send");
+    *bgsend = _make_proxy("bgsend");
+    *bgread = _make_proxy("bgread");
+}
+
+1;
