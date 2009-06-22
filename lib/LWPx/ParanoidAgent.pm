@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -155,7 +155,7 @@ sub _bad_host {
             $parts[1] > 0xff ||
             $parts[2] > 0xffff;
         $addr = pack("N", $parts[0] << 24 | $parts[1] << 16 | $parts[2]);
-    } else {
+    } elsif (@parts == 4) {
         # a.b.c.d - 8.8.8.8 bits
         return 1 if
             $parts[0] > 0xff ||
@@ -163,6 +163,8 @@ sub _bad_host {
             $parts[2] > 0xff ||
             $parts[3] > 0xff;
         $addr = pack("N", $parts[0] << 24 | $parts[1] << 16 | $parts[2] << 8 | $parts[3]);
+    } else {
+        return 1;
     }
 
     my $haddr = unpack("N", $addr); # host order IP address

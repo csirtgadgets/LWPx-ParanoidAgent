@@ -1,3 +1,7 @@
+1.05:  2009-06-21
+        - patch from Alessio Signorini <alessio.signorini@spryte.it> to
+	  quiet a warning that could be triggered
+	
 1.04:  2008-10-30
 	- fix tests to no longer rely on my DNS servers, which had since migrated
 	  to EasyDNS which doesn't allow the types of malicious records I was
