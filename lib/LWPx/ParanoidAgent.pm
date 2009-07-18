@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.05';
+$VERSION = '1.06';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -11,6 +11,7 @@ require HTTP::Response;
 use HTTP::Status ();
 use strict;
 use Net::DNS;
+use LWP::Debug ();
 
 sub new {
     my $class = shift;
