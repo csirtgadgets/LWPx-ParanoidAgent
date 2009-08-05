@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.06';
+$VERSION = '1.07';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -314,11 +314,12 @@ EOT
             $response = $protocol->request($request, $proxy,
                                            $arg, $size, $timeout);
         };
-        if ($@) {
-            $@ =~ s/ at .* line \d+.*//s;  # remove file/line number
+        my $error = $@ || $response->header( 'x-died' );
+        if ($error) {
+            $error =~ s/ at .* line \d+.*//s; # remove file/line number
             $response = _new_response($request,
                                       &HTTP::Status::RC_INTERNAL_SERVER_ERROR,
-                                      $@);
+                                      $error);
         }
     }
     else {

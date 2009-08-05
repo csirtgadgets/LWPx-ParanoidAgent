@@ -4,7 +4,7 @@
 use strict;
 use LWPx::ParanoidAgent;
 use Time::HiRes qw(time);
-use Test::More tests => 29;
+use Test::More 'no_plan';
 use Net::DNS;
 use IO::Socket::INET;
 
@@ -33,6 +33,11 @@ my $mock_resolver = MockResolver->new;
 $ua->resolver($mock_resolver);
 
 my ($HELPER_IP, $HELPER_PORT) = ("127.66.74.70", 9001);
+
+unless (bind_local()) {
+    diag "Can't bind to $HELPER_IP. Bailing out";
+    exit;
+}
 
 my $child_pid = fork;
 unless ($child_pid) {
@@ -187,13 +192,16 @@ ok(  $res->is_success);
 
 kill 9, $child_pid;
 
+sub bind_local {
+    IO::Socket::INET->new(Listen    => 5,
+                          LocalAddr => $HELPER_IP,
+                          LocalPort => $HELPER_PORT,
+                          ReuseAddr => 1,
+                          Proto     => 'tcp')
+}
 
 sub web_server_mode {
-    my $ssock = IO::Socket::INET->new(Listen    => 5,
-                                      LocalAddr => $HELPER_IP,
-                                      LocalPort => $HELPER_PORT,
-                                      ReuseAddr => 1,
-                                      Proto     => 'tcp')
+    my $ssock = bind_local
         or die "Couldn't start webserver: $!\n";
 
     while (my $csock = $ssock->accept) {

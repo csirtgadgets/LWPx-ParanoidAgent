@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                LWPx-ParanoidAgent
-version:             1.06
+version:             1.07
 abstract:            subclass of LWP::UserAgent that protects you from harm
 license:             ~
 author:              
