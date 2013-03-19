@@ -1,3 +1,6 @@
+1.08:   2013-03
+    - [SREZIC] added mirror support: https://rt.cpan.org/Ticket/Display.html?id=44569
+
 1.07:  2009-08-05
 	- Skip the whole test when it can't bind to the specified private IP
 	  (Tatsuhiko Miyagawa)
