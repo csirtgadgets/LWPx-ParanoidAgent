@@ -331,6 +331,7 @@ EOT
     $response->request($request);  # record request for reference
     $cookie_jar->extract_cookies($response) if $cookie_jar;
     $response->header("Client-Date" => HTTP::Date::time2str(time));
+    $self->run_handlers("response_done", $response) if $self->can('run_handlers');
     return $response;
 }
 
