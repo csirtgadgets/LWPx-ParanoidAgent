@@ -8,6 +8,6 @@ WriteMakefile( 'NAME' => 'LWPx::ParanoidAgent',
                },
                ($] >= 5.005 ?
                 (ABSTRACT_FROM => 'lib/LWPx/ParanoidAgent.pm',
-                 AUTHOR     => 'Brad Fitzpatrick <brad@danga.com>') : ()),
+                 AUTHOR     => 'Wes Young <wes@barely3am.com>') : ()),
                );
 

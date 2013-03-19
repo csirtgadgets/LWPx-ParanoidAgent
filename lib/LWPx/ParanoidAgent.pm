@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.07';
+$VERSION = '1.07_01';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -561,6 +561,11 @@ for somebody to enter in a good address in a subversive way.
 
 See L<LWP::UserAgent> to see how to use this class.
 
+http://contributing.appspot.com/lwpx-paranoidagent
+http://brad.livejournal.com/2409049.html
+https://github.com/collectiveintel/LWPx-ParanoidAgent
+http://search.cpan.org/dist/LWPx-ParanoidAgent
+
 =head1 WARRANTY
 
 This module is supplied "as-is" and comes with no warranty, expressed
@@ -574,7 +579,8 @@ Maybe.  See the warranty above.
 
 =head1 COPYRIGHT
 
-Copyright 2005 Brad Fitzpatrick
+ Copyright 2005 Brad Fitzpatrick
+ Copyright 2013 Wes Young (wesyoung.me)
 
 Lot of code from the the base class, copyright 1995-2004 Gisle Aas.
 
