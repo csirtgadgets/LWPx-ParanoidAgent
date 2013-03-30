@@ -1,9 +1,0 @@
-MANIFEST
-Makefile.PL
-ChangeLog
-lib/LWPx/Protocol/http_paranoid.pm
-lib/LWPx/Protocol/https_paranoid.pm
-lib/LWPx/ParanoidAgent.pm
-t/00-all.t
-t/30-mirror.t
-META.yml                                 Module meta-data (added by MakeMaker)
