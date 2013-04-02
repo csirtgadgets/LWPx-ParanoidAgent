@@ -567,6 +567,10 @@ http://brad.livejournal.com/2409049.html
 https://github.com/collectiveintel/LWPx-ParanoidAgent
 http://search.cpan.org/dist/LWPx-ParanoidAgent
 
+=head1 ISSUES
+
+Report issues: https://github.com/collectiveintel/LWPx-ParanoidAgent/issues
+
 =head1 WARRANTY
 
 This module is supplied "as-is" and comes with no warranty, expressed
