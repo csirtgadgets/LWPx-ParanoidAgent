@@ -1,4 +1,7 @@
-1.08:   2013-03-30
+1.08_01:    2013-04-26
+    - removed some of the tests that seem to fail on congested machines (eg: cpantesters).
+
+1.08:       2013-03-30
     - [SREZIC] added mirror support: https://rt.cpan.org/Ticket/Display.html?id=44569
 
 1.07:  2009-08-05

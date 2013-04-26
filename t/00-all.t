@@ -158,37 +158,9 @@ $res = $ua->get("$HELPER_SERVER/redir/http://10.2.3.4/");
 print $res->status_line, "\n";
 ok(! $res->is_success);
 
-# redirect with tarpitting
-print "4 second redirect tarpit (tolerance 2)...\n";
-$ua->timeout(2);
-$res = $ua->get("$HELPER_SERVER/redir-4/http://www.danga.com/");
-ok(! $res->is_success);
-
-# lots of slow redirects adding up to a lot of time
-print "Three 1-second redirect tarpits (tolerance 2)...\n";
-$ua->timeout(2);
-$t1 = time();
-$res = $ua->get("$HELPER_SERVER/redir-1/$HELPER_SERVER/redir-1/$HELPER_SERVER/redir-1/http://www.danga.com/");
-$td = time() - $t1;
-$delta->();
-ok($td < 2.5);
-ok(! $res->is_success);
-
 # redirecting a bunch and getting the final good host
 $res = $ua->get("$HELPER_SERVER/redir/$HELPER_SERVER/redir/$HELPER_SERVER/redir/http://www.danga.com/");
 ok( $res->is_success && $res->request->uri->host eq "www.danga.com");
-
-# dying in a tarpit
-print "5 second tarpit (tolerance 2)...\n";
-$ua->timeout(2);
-$res = $ua->get("$HELPER_SERVER/1.5");
-ok(!  $res->is_success);
-
-# making it out of a tarpit.
-print "3 second tarpit (tolerance 4)...\n";
-$ua->timeout(4);
-$res = $ua->get("$HELPER_SERVER/1.3");
-ok(  $res->is_success);
 
 kill 9, $child_pid;
 
