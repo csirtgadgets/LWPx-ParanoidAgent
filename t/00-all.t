@@ -126,18 +126,6 @@ $res = $ua->get("http://bradfitz.com/");
 print $res->status_line, "\n";
 ok(  $res->is_success);
 
-# SSL should still work, assuming it would work before.
-SKIP:
-{
-    my $has_ssleay = eval { require Crypt::SSLeay; 1;   };
-    my $has_iossl  = eval { require IO::Socket::SSL; 1; };
-
-    skip "Crypt::SSLeay or IO::Socket::SSL not installed", 1 unless $has_ssleay || $has_iossl;
-
-    $res = $ua->get("https://pause.perl.org/pause/query");
-    ok(  $res->is_success && $res->content =~ /Login|PAUSE|Edit/);
-}
-
 # internal. bad.  blocked by default by module.
 $res = $ua->get("http://10.2.3.4/");
 print $res->status_line, "\n";

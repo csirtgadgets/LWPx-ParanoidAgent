@@ -1,3 +1,6 @@
+1.08_02:    2013-04-29
+    - removed TLS test for now, some cpan testers reporting issues with the configuration, seems pointless given the Makefile
+
 1.08_01:    2013-04-26
     - removed some of the tests that seem to fail on congested machines (eg: cpantesters).
 
