@@ -1,3 +1,7 @@
+1.09:       2013-05-02
+    - released
+    - Makefile.PL updated
+
 1.08_02:    2013-04-29
     - removed TLS test for now, some cpan testers reporting issues with the configuration, seems pointless given the Makefile
 

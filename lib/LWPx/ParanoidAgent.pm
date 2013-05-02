@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.08_02';
+$VERSION = '1.09';
 
 require HTTP::Request;
 require HTTP::Response;
@@ -22,7 +22,7 @@ sub new {
     my $resolver          = delete $opts{resolver};
     my $paranoid_proxy    = delete $opts{paranoid_proxy};
     $opts{timeout}      ||= 15;
-
+ 
     my $self = LWP::UserAgent->new( %opts );
 
     $self->{'blocked_hosts'}     = $blocked_hosts;

@@ -18,13 +18,13 @@ This module requires these other modules and libraries:
 
 SEE ALSO
 
-   https://github.com/collectiveintel/LWPx-ParanoidAgent
-   http://collectiveintel.org
+   github.com/collectiveintel/LWPx-ParanoidAgent
+   collectiveintel.org
 
 COPYRIGHT AND LICENCE
 
 Copyright (C) 2005 Brad Fitzpatrick
-Copyright (C) 2012 by Wes Young <wesyoung.me>
+Copyright (C) 2013 by Wes Young <wesyoung.me>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
