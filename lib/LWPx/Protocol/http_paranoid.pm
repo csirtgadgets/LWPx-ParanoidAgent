@@ -15,6 +15,8 @@ use vars qw(@ISA $TOO_LATE $TIME_REMAIN);
 require LWP::Protocol;
 @ISA = qw(LWP::Protocol);
 
+use vars qw(@ISA @EXTRA_SOCK_OPTS);
+
 my $CRLF = "\015\012";
 
 # lame hack using globals in this package to communicate to sysread in the
@@ -25,6 +27,12 @@ sub _set_time_remain {
     return unless defined $TOO_LATE;
     $TIME_REMAIN = $TOO_LATE - $now;
     $TIME_REMAIN = 0 if $TIME_REMAIN < 0;
+}
+
+
+sub _extra_sock_opts  # to be overridden by subclass
+{
+    return @EXTRA_SOCK_OPTS;
 }
 
 sub _new_socket
@@ -62,6 +70,7 @@ sub _new_socket
                                          Timeout  => $conn_timeout,
                                          KeepAlive => !!$conn_cache,
                                          SendTE    => 1,
+                                         $self->_extra_sock_opts($addr,$port),
                                          );
     }
 
@@ -76,6 +85,8 @@ sub _new_socket
 
     $sock;
 }
+
+
 
 sub socket_class
 {
