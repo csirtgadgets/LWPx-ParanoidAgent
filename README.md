@@ -1,7 +1,10 @@
+[![Build Status](https://travis-ci.org/csirtgadgets/lwpx-paranoidagent.png?branch=master)](https://travis-ci.org/csirtgadgets/lwpx-paranoidagent)
+
 LWPx::ParanoidAgent
-===================
+==
 
 INSTALLATION
+==
 
 To install this module type the following:
 
@@ -11,6 +14,7 @@ To install this module type the following:
    make install
 
 DEPENDENCIES
+==
 
 This module requires these other modules and libraries:
 
