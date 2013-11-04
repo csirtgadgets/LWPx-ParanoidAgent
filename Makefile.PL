@@ -10,9 +10,9 @@ WriteMakefile(
     },
     'META_MERGE'  => {
         "resources"   => {
-            "repository"    => 'https://github.com/collectiveintel/LWPx-ParanoidAgent.git',
-            "bugtracker"    => 'https://github.com/collectiveintel/lwpx-paranoidagent/issues',
-            "homepage"      => 'https://github.com/collectiveintel/LWPx-ParanoidAgent',
+            "repository"    => 'https://github.com/csirtgadgets/LWPx-ParanoidAgent.git',
+            "bugtracker"    => 'https://github.com/csirtgadgets/lwpx-paranoidagent/issues',
+            "homepage"      => 'https://github.com/csirtgadgets/LWPx-ParanoidAgent',
         },
     },
     (
