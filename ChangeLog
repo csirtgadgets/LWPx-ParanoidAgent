@@ -1,5 +1,6 @@
-1.10-alpha.1    2013-08-29
-    - fixed: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/3
+1.10	2013-11
+	- fixed: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/3
+    - fixed: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/4
 
 1.09:       2013-05-02
     - released
