@@ -3,9 +3,10 @@ WriteMakefile(
     'NAME'          => 'LWPx::ParanoidAgent',
     'VERSION_FROM'  => 'lib/LWPx/ParanoidAgent.pm',
     'PREREQ_PM'		=> {
-        'LWP::UserAgent' => 0,
-        'Net::DNS'       => 0,
-        'Time::HiRes'    => 0,
+        'LWP::UserAgent'    => 0,
+        'Net::DNS'          => 0,
+        'Time::HiRes'       => 0,
+        'Net::SSL'          => '2.85'
     },
     'META_MERGE'  => {
         "resources"   => {
