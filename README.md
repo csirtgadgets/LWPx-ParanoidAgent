@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/csirtgadgets/lwpx-paranoidagent.png?branch=master)](https://travis-ci.org/csirtgadgets/lwpx-paranoidagent)
+[![Build Status](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent.png?branch=master)](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent)
 
 LWPx::ParanoidAgent
 ==
