@@ -93,62 +93,64 @@ ok(! $res->is_success && $res->status_line =~ /blocked/);
 $res = $ua->get("http://192.88.99.77/");
 ok(! $res->is_success && $res->status_line =~ /blocked/);
 
-# hostnames doing CNAMEs (this one resolves to "brad.lj", which is verboten)
-my $old_resolver = $ua->resolver;
-$ua->resolver($mock_resolver);
-$res = $ua->get("http://bradlj-fortest.danga.com/");
-ok(! $res->is_success);
-like($res->status_line, qr/DNS lookup resulted in bad host/);
-$ua->resolver($old_resolver);
-
-# black-listed via blocked_hosts
-$res = $ua->get("http://brad.lj/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# can't do octal in IPs
-$res = $ua->get("http://012.1.2.1/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# can't do decimal/octal IPs
-$res = $ua->get("http://167838209/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# checking that port isn't affected
-$res = $ua->get("http://brad.lj:80/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# this domain is okay.  bradfitz.com isn't blocked
-$res = $ua->get("http://bradfitz.com/");
-print $res->status_line, "\n";
-ok(  $res->is_success);
-
-# internal. bad.  blocked by default by module.
-$res = $ua->get("http://10.2.3.4/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# okay
-$res = $ua->get("http://danga.com/temp/");
-print $res->status_line, "\n";
-ok(  $res->is_success);
-
-# localhost is blocked, case insensitive
-$res = $ua->get("http://LOCALhost/temp/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# redirecting to invalid host
-$res = $ua->get("$HELPER_SERVER/redir/http://10.2.3.4/");
-print $res->status_line, "\n";
-ok(! $res->is_success);
-
-# redirecting a bunch and getting the final good host
-$res = $ua->get("$HELPER_SERVER/redir/$HELPER_SERVER/redir/$HELPER_SERVER/redir/http://www.danga.com/");
-ok( $res->is_success && $res->request->uri->host eq "www.danga.com");
+if($ENV{ONLINE_TESTS}){
+    # hostnames doing CNAMEs (this one resolves to "brad.lj", which is verboten)
+    my $old_resolver = $ua->resolver;
+    $ua->resolver($mock_resolver);
+    $res = $ua->get("http://bradlj-fortest.danga.com/");
+    ok(! $res->is_success);
+    like($res->status_line, qr/DNS lookup resulted in bad host/);
+    $ua->resolver($old_resolver);
+    
+    # black-listed via blocked_hosts
+    $res = $ua->get("http://brad.lj/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # can't do octal in IPs
+    $res = $ua->get("http://012.1.2.1/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # can't do decimal/octal IPs
+    $res = $ua->get("http://167838209/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # checking that port isn't affected
+    $res = $ua->get("http://brad.lj:80/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # this domain is okay. 
+    $res = $ua->get("http://google.com");
+    print $res->status_line, "\n";
+    ok($res->is_success);
+    
+    # internal. bad.  blocked by default by module.
+    $res = $ua->get("http://10.2.3.4/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # okay
+    $res = $ua->get("http://danga.com/temp/");
+    print $res->status_line, "\n";
+    ok(  $res->is_success);
+    
+    # localhost is blocked, case insensitive
+    $res = $ua->get("http://LOCALhost/temp/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # redirecting to invalid host
+    $res = $ua->get("$HELPER_SERVER/redir/http://10.2.3.4/");
+    print $res->status_line, "\n";
+    ok(! $res->is_success);
+    
+    # redirecting a bunch and getting the final good host
+    $res = $ua->get("$HELPER_SERVER/redir/$HELPER_SERVER/redir/$HELPER_SERVER/redir/http://www.danga.com/");
+    ok( $res->is_success && $res->request->uri->host eq "www.danga.com");
+}
 
 kill 9, $child_pid;
 

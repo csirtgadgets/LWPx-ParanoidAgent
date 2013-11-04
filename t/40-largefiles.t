@@ -6,7 +6,6 @@ BEGIN {
 }
 
 use Test::More;
-BEGIN { use_ok('LWPx::ParanoidAgent') };
 
 use LWPx::ParanoidAgent;
  
