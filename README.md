@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent.png?branch=stable)](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent)
-
 LWPx::ParanoidAgent
 ==
+[![Build Status](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent.png?branch=stable)](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent)
+
 
 INSTALLATION
 ===
