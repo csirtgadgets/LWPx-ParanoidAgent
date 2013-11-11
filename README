@@ -18,7 +18,9 @@ This module requires these other modules and libraries:
 
 SEE ALSO
 
-   github.com/csirtgadgets/LWPx-ParanoidAgent
+    github.com/csirtgadgets/LWPx-ParanoidAgent
+    LWP::UserAgent::Paranoid
+    LWPx::ParanoidHandler
 
 COPYRIGHT AND LICENCE
 

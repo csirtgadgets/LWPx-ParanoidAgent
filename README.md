@@ -24,6 +24,8 @@ SEE ALSO
 ===
 ```
    github.com/csirtgadgets/LWPx-ParanoidAgent  
+   LWP::UserAgent::Paranoid
+   LWPx::ParanoidHandler
 ```
 COPYRIGHT AND LICENCE
 ===
