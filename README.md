@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent.png?branch=master)](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent)
+[![Build Status](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent.png?branch=stable)](https://travis-ci.org/csirtgadgets/LWPx-ParanoidAgent)
 
 LWPx::ParanoidAgent
 ==
@@ -24,13 +24,12 @@ SEE ALSO
 ===
 
    github.com/csirtgadgets/LWPx-ParanoidAgent  
-   csirtgadgets.org
 
 COPYRIGHT AND LICENCE
 ===
 
   Copyright (C) 2005 Brad Fitzpatrick  
-  Copyright (C) 2013 by Wes Young <wesyoung.me>
+  Copyright (C) 2013 by the CSIRT Gadgets Foundation <csirtgadgets.org>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
