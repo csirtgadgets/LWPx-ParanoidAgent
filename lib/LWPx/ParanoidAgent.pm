@@ -3,7 +3,7 @@ require LWP::UserAgent;
 
 use vars qw(@ISA $VERSION);
 @ISA = qw(LWP::UserAgent);
-$VERSION = '1.09_01';
+$VERSION = '1.10';
 
 require HTTP::Request;
 require HTTP::Response;
