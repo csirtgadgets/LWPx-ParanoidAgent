@@ -1,3 +1,6 @@
+1.11	2014-
+	- fixed read-timeout issue: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/7
+
 1.10	2013-11-11
 	- fixed: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/3
     - fixed: https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/4

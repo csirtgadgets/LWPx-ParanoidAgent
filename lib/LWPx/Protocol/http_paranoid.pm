@@ -164,8 +164,9 @@ sub request
     $fullpath = "/$fullpath" unless $fullpath =~ m,^/,;
 
     # connect to remote sites
-    my $socket = $self->_new_socket($host, $port, $timeout, $request);
 
+    my $socket = $self->_new_socket($host, $port, $timeout, $request);
+    
     my @h;
     my $request_headers = $request->headers->clone;
     $self->_fixup_header($request_headers, $url, $proxy);
@@ -219,6 +220,7 @@ sub request
 	my $n = $socket->syswrite($req_buf, length($req_buf));
 	die $! unless defined($n);
 	die "short write" unless $n == length($req_buf);
+    
 	#LWP::Debug::conns($req_buf);
     }
 
@@ -226,102 +228,102 @@ sub request
     my $drop_connection;
 
     if ($has_content) {
-	my $write_wait = 0;
-	$write_wait = 2
-	    if ($request_headers->header("Expect") || "") =~ /100-continue/;
-
-	my $eof;
-	my $wbuf;
-	my $woffset = 0;
-	if (ref($content_ref) eq 'CODE') {
-	    my $buf = &$content_ref();
-	    $buf = "" unless defined($buf);
-	    $buf = sprintf "%x%s%s%s", length($buf), $CRLF, $buf, $CRLF
-		if $chunked;
-	    $wbuf = \$buf;
-	}
-	else {
-	    $wbuf = $content_ref;
-	    $eof = 1;
-	}
-
-	my $fbits = '';
-	vec($fbits, fileno($socket), 1) = 1;
-
-	while ($woffset < length($$wbuf)) {
-
-	    my $time_before;
-
-            my $now = time();
-            if ($now > $TOO_LATE) {
-                die "Request took too long.";
-            }
-
-	    my $sel_timeout = $TOO_LATE - $now;
-	    if ($write_wait) {
-		$time_before = time;
-		$sel_timeout = $write_wait if $write_wait < $sel_timeout;
-	    }
-
-	    my $rbits = $fbits;
-	    my $wbits = $write_wait ? undef : $fbits;
-	    my $nfound = select($rbits, $wbits, undef, $sel_timeout);
-	    unless (defined $nfound) {
-		die "select failed: $!";
-	    }
-
-	    if ($write_wait) {
-		$write_wait -= time - $time_before;
-		$write_wait = 0 if $write_wait < 0;
-	    }
-
-	    if (defined($rbits) && $rbits =~ /[^\0]/) {
-		# readable
-		my $buf = $socket->_rbuf;
-
-                _set_time_remain();
-
-		my $n = $socket->sysread($buf, 1024, length($buf));
-		unless ($n) {
-		    die "EOF";
-		}
-		$socket->_rbuf($buf);
-		if ($buf =~ /\015?\012\015?\012/) {
-		    # a whole response present
-		    ($code, $mess, @h) = $socket->read_response_headers(laxed => 1,
-									junk_out => \@junk,
-								       );
-		    if ($code eq "100") {
-			$write_wait = 0;
-			undef($code);
-		    }
-		    else {
-			$drop_connection++;
-			last;
-			# XXX should perhaps try to abort write in a nice way too
-		    }
-		}
-	    }
-	    if (defined($wbits) && $wbits =~ /[^\0]/) {
-		my $n = $socket->syswrite($$wbuf, length($$wbuf), $woffset);
-		unless ($n) {
-		    die "syswrite: $!" unless defined $n;
-		    die "syswrite: no bytes written";
-		}
-		$woffset += $n;
-
-		if (!$eof && $woffset >= length($$wbuf)) {
-		    # need to refill buffer from $content_ref code
-		    my $buf = &$content_ref();
-		    $buf = "" unless defined($buf);
-		    $eof++ unless length($buf);
-		    $buf = sprintf "%x%s%s%s", length($buf), $CRLF, $buf, $CRLF
-			if $chunked;
-		    $wbuf = \$buf;
-		    $woffset = 0;
-		}
-	    }
-	}
+    	my $write_wait = 0;
+    	$write_wait = 2
+    	    if ($request_headers->header("Expect") || "") =~ /100-continue/;
+    
+    	my $eof;
+    	my $wbuf;
+    	my $woffset = 0;
+    	if (ref($content_ref) eq 'CODE') {
+    	    my $buf = &$content_ref();
+    	    $buf = "" unless defined($buf);
+    	    $buf = sprintf "%x%s%s%s", length($buf), $CRLF, $buf, $CRLF
+    		if $chunked;
+    	    $wbuf = \$buf;
+    	}
+    	else {
+    	    $wbuf = $content_ref;
+    	    $eof = 1;
+    	}
+    
+    	my $fbits = '';
+    	vec($fbits, fileno($socket), 1) = 1;
+    
+    	while ($woffset < length($$wbuf)) {
+    
+    	    my $time_before;
+    
+                my $now = time();
+                if ($now > $TOO_LATE) {
+                    die "Request took too long.";
+                }
+    
+    	    my $sel_timeout = $TOO_LATE - $now;
+    	    if ($write_wait) {
+    		$time_before = time;
+    		$sel_timeout = $write_wait if $write_wait < $sel_timeout;
+    	    }
+    
+    	    my $rbits = $fbits;
+    	    my $wbits = $write_wait ? undef : $fbits;
+    	    my $nfound = select($rbits, $wbits, undef, $sel_timeout);
+    	    unless (defined $nfound) {
+    		die "select failed: $!";
+    	    }
+    
+    	    if ($write_wait) {
+    		$write_wait -= time - $time_before;
+    		$write_wait = 0 if $write_wait < 0;
+    	    }
+    
+    	    if (defined($rbits) && $rbits =~ /[^\0]/) {
+    		# readable
+    		my $buf = $socket->_rbuf;
+    
+                    _set_time_remain();
+    
+    		my $n = $socket->sysread($buf, 1024, length($buf));
+    		unless ($n) {
+    		    die "EOF";
+    		}
+    		$socket->_rbuf($buf);
+    		if ($buf =~ /\015?\012\015?\012/) {
+    		    # a whole response present
+    		    ($code, $mess, @h) = $socket->read_response_headers(laxed => 1,
+    									junk_out => \@junk,
+    								       );
+    		    if ($code eq "100") {
+    			$write_wait = 0;
+    			undef($code);
+    		    }
+    		    else {
+    			$drop_connection++;
+    			last;
+    			# XXX should perhaps try to abort write in a nice way too
+    		    }
+    		}
+    	    }
+    	    if (defined($wbits) && $wbits =~ /[^\0]/) {
+    		my $n = $socket->syswrite($$wbuf, length($$wbuf), $woffset);
+    		unless ($n) {
+    		    die "syswrite: $!" unless defined $n;
+    		    die "syswrite: no bytes written";
+    		}
+    		$woffset += $n;
+    
+    		if (!$eof && $woffset >= length($$wbuf)) {
+    		    # need to refill buffer from $content_ref code
+    		    my $buf = &$content_ref();
+    		    $buf = "" unless defined($buf);
+    		    $eof++ unless length($buf);
+    		    $buf = sprintf "%x%s%s%s", length($buf), $CRLF, $buf, $CRLF
+    			if $chunked;
+    		    $wbuf = \$buf;
+    		    $woffset = 0;
+    		}
+    	    }
+    	}
     }
 
     _set_time_remain();
@@ -358,10 +360,11 @@ sub request
 	my $n;
       READ:
 	{
-            _set_time_remain();
+        _set_time_remain();
 	    $n = $socket->read_entity_body($buf, $size);
 	    die "Can't read entity body: $!" unless defined $n;
 	    redo READ if $n == -1;
+	    die 'read timeout' unless($TIME_REMAIN - 1);
 	}
 	$complete++ if !$n;
         return \$buf;
