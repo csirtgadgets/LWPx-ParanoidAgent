@@ -542,7 +542,7 @@ Get/set the L<Net::DNS::Resolver> object used to lookup hostnames.
 
 =item $csr->B<blocked_hosts>
 
-Get/set the the list of blocked hosts.  The items in @host_list may be
+Get/set the list of blocked hosts.  The items in @host_list may be
 compiled regular expressions (with qr//), code blocks, or scalar
 literals.  In any case, the thing that is match, passed in, or
 compared (respectively), is all of the given hostname, given IP
@@ -591,7 +591,7 @@ Maybe.  See the warranty above.
  Copyright 2005 Brad Fitzpatrick
  Copyright 2013 Wes Young (wesyoung.me)
 
-Lot of code from the the base class, copyright 1995-2004 Gisle Aas.
+Lot of code from the base class, copyright 1995-2004 Gisle Aas.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
