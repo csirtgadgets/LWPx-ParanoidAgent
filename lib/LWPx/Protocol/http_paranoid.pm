@@ -10,6 +10,8 @@ require HTTP::Response;
 require HTTP::Status;
 require Net::HTTP;
 
+use Errno qw(EAGAIN);
+
 use vars qw(@ISA $TOO_LATE $TIME_REMAIN);
 
 require LWP::Protocol;
@@ -363,8 +365,9 @@ sub request
 	{
         _set_time_remain();
 	    $n = $socket->read_entity_body($buf, $size);
-	    die "Can't read entity body: $!" unless defined $n;
 	    redo READ if $n == -1;
+	    redo READ if not defined $n and $! == EAGAIN;
+	    die "Can't read entity body: $!" unless defined $n;
 	    die 'read timeout' unless($TIME_REMAIN - 1);
 	}
 	$complete++ if !$n;
