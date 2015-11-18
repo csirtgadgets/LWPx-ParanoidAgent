@@ -55,21 +55,31 @@ sub _resolve {
     # return the IP address if it looks like one and wasn't marked bad
     return ($host) if $host =~ /^\d+\.\d+\.\d+\.\d+$/;
 
-    my $sock = $res->bgsend($host)
+    my $dns_ref = $res->bgsend($host)
         or die "No sock from bgsend";
+    my $sock;
+
+    # Net::DNS 1.03 started returning IO::Select objects instead of sockets
+    if (UNIVERSAL::isa($dns_ref, "IO::Select")) {
+        my $handles = [ $dns_ref->handles ];
+        $sock = $handles->[0]->[0];
+    }
+    else {
+        $sock = $dns_ref;
+    }
 
     # wait for the socket to become readable, unless this is from our test
     # mock resolver.
-    unless ($sock && $sock eq "MOCK") {
+    unless ($dns_ref && $dns_ref eq "MOCK") {
         my $rin = '';
         vec($rin, fileno($sock), 1) = 1;
         my $nf = select($rin, undef, undef, $self->_time_remain($request));
         die "DNS lookup timeout" unless $nf;
     }
 
-    my $packet = $res->bgread($sock)
+    my $packet = $res->bgread($dns_ref)
         or die "DNS bgread failure";
-    $sock = undef;
+    $dns_ref = $sock = undef;
 
     my @addr;
     my $cname;
