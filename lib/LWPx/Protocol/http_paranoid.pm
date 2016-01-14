@@ -330,6 +330,22 @@ sub request
     }
 
     _set_time_remain();
+
+    ## Now we connected to host
+    ## Check host started to send any data in return
+    my $rbits = '';
+    vec($rbits, fileno($socket), 1) = 1;
+    my $headers_wait_for = $TIME_REMAIN;
+    my $nfound = undef;
+    while (1) {
+        $nfound = select($rbits, undef, undef, $headers_wait_for--);
+        last if $nfound;
+        last if $headers_wait_for < 0;
+    }
+    die "Headers not came for $TIME_REMAIN sec" unless $nfound;
+
+    _set_time_remain();
+
     ($code, $mess, @h) = $socket->read_response_headers(laxed => 1, junk_out => \@junk)
 	unless $code;
     ($code, $mess, @h) = $socket->read_response_headers(laxed => 1, junk_out => \@junk)
