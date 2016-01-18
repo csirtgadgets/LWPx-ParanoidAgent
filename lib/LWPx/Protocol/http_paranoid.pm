@@ -335,13 +335,7 @@ sub request
     ## Check host started to send any data in return
     my $rbits = '';
     vec($rbits, fileno($socket), 1) = 1;
-    my $headers_wait_for = $TIME_REMAIN;
-    my $nfound = undef;
-    while (1) {
-        $nfound = select($rbits, undef, undef, $headers_wait_for--);
-        last if $nfound;
-        last if $headers_wait_for < 0;
-    }
+    my $nfound = select($rbits, undef, undef, $TIME_REMAIN);
     die "Headers not came for $TIME_REMAIN sec" unless $nfound;
 
     _set_time_remain();
@@ -436,6 +430,8 @@ sub sysread {
 
 sub can_read {
     my($self, $timeout) = @_;
+
+    $timeout ||= $LWPx::Protocol::http_paranoid::TIME_REMAIN;
     my $fbits = '';
     vec($fbits, fileno($self), 1) = 1;
     my $nfound = select($fbits, undef, undef, $timeout);
