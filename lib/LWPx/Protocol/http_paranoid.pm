@@ -375,8 +375,8 @@ sub request
 	{
         _set_time_remain();
 	    $n = $socket->read_entity_body($buf, $size);
-	    redo READ if $n == -1;
 	    redo READ if not defined $n and $! == EAGAIN;
+	    redo READ if $n == -1;
 	    die "Can't read entity body: $!" unless defined $n;
 	    die 'read timeout' unless($TIME_REMAIN - 1);
 	}
