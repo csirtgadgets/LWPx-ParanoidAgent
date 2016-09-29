@@ -68,6 +68,7 @@ sub _new_socket
             $timeout;
         $sock = $self->socket_class->new(PeerAddr => $addr,
                                          PeerHost => $host,
+                                         SSL_hostname => $host,
                                          PeerPort => $port,
                                          Proto    => 'tcp',
                                          Timeout  => $conn_timeout,
