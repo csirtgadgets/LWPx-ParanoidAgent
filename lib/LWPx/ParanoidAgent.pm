@@ -236,110 +236,113 @@ sub send_request
     my ($self, $request, $arg, $size) = @_;
     $self->_request_sanity_check($request);
 
-    my ($method, $url) = ($request->method, $request->uri);
+    my $response = $self->run_handlers("request_send", $request);
 
-    local($SIG{__DIE__});  # protect against user defined die handlers
+    unless ($response) {
+        my ($method, $url) = ($request->method, $request->uri);
 
-    # Check that we have a METHOD and a URL first
-    return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "Method missing")
-        unless $method;
-    return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "URL missing")
-        unless $url;
-    return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "URL must be absolute")
-        unless $url->scheme;
-    return _new_response($request, &HTTP::Status::RC_BAD_REQUEST,
-                         "ParanoidAgent doesn't support going through proxies.  ".
-                         "In that case, do your paranoia at your proxy instead.")
-        if $self->_need_proxy($url);
+        local($SIG{__DIE__});  # protect against user defined die handlers
 
-    my $scheme = $url->scheme;
-    return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "Only http and https are supported by ParanoidAgent")
-        unless $scheme eq "http" || $scheme eq "https";
+        # Check that we have a METHOD and a URL first
+        return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "Method missing")
+            unless $method;
+        return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "URL missing")
+            unless $url;
+        return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "URL must be absolute")
+            unless $url->scheme;
+        return _new_response($request, &HTTP::Status::RC_BAD_REQUEST,
+                             "ParanoidAgent doesn't support going through proxies.  ".
+                             "In that case, do your paranoia at your proxy instead.")
+            if $self->_need_proxy($url);
 
-    LWP::Debug::trace("$method $url");
+        my $scheme = $url->scheme;
+        return _new_response($request, &HTTP::Status::RC_BAD_REQUEST, "Only http and https are supported by ParanoidAgent")
+            unless $scheme eq "http" || $scheme eq "https";
 
-    my $protocol;
+        LWP::Debug::trace("$method $url");
 
-    {
-      # Honor object-specific restrictions by forcing protocol objects
-      #  into class LWP::Protocol::nogo.
-        my $x;
-        if($x       = $self->protocols_allowed) {
-            if(grep lc($_) eq $scheme, @$x) {
-                LWP::Debug::trace("$scheme URLs are among $self\'s allowed protocols (@$x)");
-              }
-            else {
-                LWP::Debug::trace("$scheme URLs aren't among $self\'s allowed protocols (@$x)");
-                  require LWP::Protocol::nogo;
-                  $protocol = LWP::Protocol::nogo->new;
-              }
-        }
-        elsif ($x = $self->protocols_forbidden) {
-            if(grep lc($_) eq $scheme, @$x) {
-                LWP::Debug::trace("$scheme URLs are among $self\'s forbidden protocols (@$x)");
-                  require LWP::Protocol::nogo;
-                  $protocol = LWP::Protocol::nogo->new;
-              }
-            else {
-                LWP::Debug::trace("$scheme URLs aren't among $self\'s forbidden protocols (@$x)");
-              }
-        }
-      # else fall thru and create the protocol object normally
-    }
+        my $protocol;
 
-    unless ($protocol) {
-        LWP::Protocol::implementor("${scheme}_paranoid",  "LWPx::Protocol::${scheme}_paranoid");
-        eval "require LWPx::Protocol::${scheme}_paranoid;";
-        if ($@) {
-            $@ =~ s/ at .* line \d+.*//s;  # remove file/line number
-            my $response =  _new_response($request, &HTTP::Status::RC_NOT_IMPLEMENTED, $@);
-            return $response;
+        {
+          # Honor object-specific restrictions by forcing protocol objects
+          #  into class LWP::Protocol::nogo.
+            my $x;
+            if($x       = $self->protocols_allowed) {
+                if(grep lc($_) eq $scheme, @$x) {
+                    LWP::Debug::trace("$scheme URLs are among $self\'s allowed protocols (@$x)");
+                  }
+                else {
+                    LWP::Debug::trace("$scheme URLs aren't among $self\'s allowed protocols (@$x)");
+                      require LWP::Protocol::nogo;
+                      $protocol = LWP::Protocol::nogo->new;
+                  }
+            }
+            elsif ($x = $self->protocols_forbidden) {
+                if(grep lc($_) eq $scheme, @$x) {
+                    LWP::Debug::trace("$scheme URLs are among $self\'s forbidden protocols (@$x)");
+                      require LWP::Protocol::nogo;
+                      $protocol = LWP::Protocol::nogo->new;
+                  }
+                else {
+                    LWP::Debug::trace("$scheme URLs aren't among $self\'s forbidden protocols (@$x)");
+                  }
+            }
+          # else fall thru and create the protocol object normally
         }
 
-        $protocol = eval { LWP::Protocol::create($scheme eq "http" ? "http_paranoid" : "https_paranoid", $self) };
-        if ($@) {
-            $@ =~ s/ at .* line \d+.*//s;  # remove file/line number
-            my $response =  _new_response($request, &HTTP::Status::RC_NOT_IMPLEMENTED, $@);
-            if ($scheme eq "https") {
-                $response->message($response->message . " (Crypt::SSLeay not installed)");
-                $response->content_type("text/plain");
-                $response->content(<<EOT);
+        unless ($protocol) {
+            LWP::Protocol::implementor("${scheme}_paranoid",  "LWPx::Protocol::${scheme}_paranoid");
+            eval "require LWPx::Protocol::${scheme}_paranoid;";
+            if ($@) {
+                $@ =~ s/ at .* line \d+.*//s;  # remove file/line number
+                my $response =  _new_response($request, &HTTP::Status::RC_NOT_IMPLEMENTED, $@);
+                return $response;
+            }
+
+            $protocol = eval { LWP::Protocol::create($scheme eq "http" ? "http_paranoid" : "https_paranoid", $self) };
+            if ($@) {
+                $@ =~ s/ at .* line \d+.*//s;  # remove file/line number
+                my $response =  _new_response($request, &HTTP::Status::RC_NOT_IMPLEMENTED, $@);
+                if ($scheme eq "https") {
+                    $response->message($response->message . " (Crypt::SSLeay not installed)");
+                    $response->content_type("text/plain");
+                    $response->content(<<EOT);
 LWP will support https URLs if the Crypt::SSLeay module is installed.
 More information at <http://www.linpro.no/lwp/libwww-perl/README.SSL>.
 EOT
-}
-            return $response;
+                }
+                return $response;
+            }
         }
-    }
 
-    # Extract fields that will be used below
-    my ($timeout, $cookie_jar, $use_eval, $parse_head, $max_size) =
-        @{$self}{qw(timeout cookie_jar use_eval parse_head max_size)};
+        # Extract fields that will be used below
+        my ($timeout, $cookie_jar, $use_eval, $parse_head, $max_size) =
+            @{$self}{qw(timeout cookie_jar use_eval parse_head max_size)};
 
-    my $response;
-    my $proxy = undef;
-    if ($use_eval) {
-        # we eval, and turn dies into responses below
-        eval {
+        my $proxy = undef;
+        if ($use_eval) {
+            # we eval, and turn dies into responses below
+            eval {
+                $response = $protocol->request($request, $proxy,
+                                               $arg, $size, $timeout);
+            };
+            my $error = $@ || $response->header( 'x-died' );
+            if ($error) {
+                $error =~ s/ at .* line \d+.*//s; # remove file/line number
+                $response = _new_response($request,
+                                          &HTTP::Status::RC_INTERNAL_SERVER_ERROR,
+                                          $error);
+            }
+        }
+        else {
             $response = $protocol->request($request, $proxy,
                                            $arg, $size, $timeout);
-        };
-        my $error = $@ || $response->header( 'x-died' );
-        if ($error) {
-            $error =~ s/ at .* line \d+.*//s; # remove file/line number
-            $response = _new_response($request,
-                                      &HTTP::Status::RC_INTERNAL_SERVER_ERROR,
-                                      $error);
+            # XXX: Should we die unless $response->is_success ???
         }
-    }
-    else {
-        $response = $protocol->request($request, $proxy,
-                                       $arg, $size, $timeout);
-        # XXX: Should we die unless $response->is_success ???
     }
 
     $response->request($request);  # record request for reference
-    $cookie_jar->extract_cookies($response) if $cookie_jar;
+    $self->{cookie_jar}->extract_cookies($response) if $self->{cookie_jar};
     $response->header("Client-Date" => HTTP::Date::time2str(time));
     $self->run_handlers("response_done", $response) if $self->can('run_handlers');
     return $response;
