@@ -93,7 +93,7 @@ ok(! $res->is_success && $res->status_line =~ /blocked/);
 $res = $ua->get("http://192.88.99.77/");
 ok(! $res->is_success && $res->status_line =~ /blocked/);
 
-if($ENV{ONLINE_TESTS}){
+if(($ENV{RELEASE_TESTING} || $ENV{AUTOMATED_TESTING} || $ENV{ONLINE_TESTS}) && !$ENV{NO_NETWORK_TESTING}){
     # hostnames doing CNAMEs (this one resolves to "brad.lj", which is verboten)
     my $old_resolver = $ua->resolver;
     $ua->resolver($mock_resolver);
