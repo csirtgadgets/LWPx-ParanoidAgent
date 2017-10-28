@@ -1,3 +1,9 @@
+	- Prune collection of cruft files.
+	  https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/26
+	- Make network/thread/automated tests more consistent with CPAN
+	  expectations.
+	  https://github.com/csirtgadgets/LWPx-ParanoidAgent/issues/27
+
 1.12    2016-09-29
 	- Fix to work with Net::DNS 1.03 (RT#108745)
 	  Net::DNS::bgsend()/bgread() API changed in a backward-incompatible
